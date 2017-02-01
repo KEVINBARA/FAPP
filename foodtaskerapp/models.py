@@ -14,3 +14,22 @@ class Restaurant(models.Model):
 
     def __str__(self):
         return self.name  #used to display the ID of the restaurant object (self.name for name / self.address for adress)
+
+class Customer(models.Model):
+    user = models.OneToOneField(User, on_delete = models.CASCADE , related_name = 'customer')
+    avatar = models.CharField(max_length= 500)
+    phone = models.CharField(max_length= 500)
+    adress = models.CharField(max_length= 500)
+
+    def __str__(self):
+        return self.user.get_full_name()      #django function used to pull the fullname
+
+
+class Driver(models.Model):
+    user = models.OneToOneField(User, on_delete = models.CASCADE , related_name = 'driver')
+    avatar = models.CharField(max_length= 500)
+    phone = models.CharField(max_length= 500)
+    adress = models.CharField(max_length= 500)
+
+    def __str__(self):
+        return self.user.get_full_name()
