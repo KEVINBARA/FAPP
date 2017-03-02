@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from foodtaskerapp import views
+from foodtaskerapp import views , apis
 from django.contrib.auth import views as auth_views  #authenctication library of django
 
 
@@ -44,4 +44,6 @@ urlpatterns = [
     # /convert-token (sign-in /sign-up)
     #/revoke-token (sign-out)
 
+
+    url(r'^api/customer/restaurant/$', apis.customer_get_restaurant),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
