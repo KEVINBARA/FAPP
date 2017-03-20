@@ -89,3 +89,13 @@ def customer_add_order(request):
 
 def customer_get_latest_order(request):
     return JsonResponse({})
+
+
+def restaurant_order_notification(request, last_request_time):
+    notification = Order.objects.filter(restaurant = request.user.restaurant,
+        created_at__gt = last_request_time).count()     # in python (greater than ) is not "<" but "__gt"
+
+    ''''select count(*) from Orders
+    where restaurant = request.user.restaurant AND created_at > last_request_time''' #this is a comment
+
+    return JsonResponse({"notification":notification})
