@@ -10,6 +10,9 @@ from oauth2_provider.models import AccessToken
 from foodtaskerapp.models import Restaurant, Meal, Order, OrderDetails
 from foodtaskerapp.serializers import RestaurantSerializer, MealSerializer, OrderSerializer
 
+###############
+# CUSTOMER
+###############
 def customer_get_restaurant(request):               #API FOR THE CUSTOMER
     restaurants = RestaurantSerializer(
         Restaurant.objects.all().order_by("id"),
@@ -96,7 +99,9 @@ def customer_get_latest_order(request):
     order = OrderSerializer(Order.objects.filter(customer = customer).last()).data
     return JsonResponse({"order": order})
 
-
+###############
+# RESTAURANT
+###############
 def restaurant_order_notification(request, last_request_time):
     notification = Order.objects.filter(restaurant = request.user.restaurant,
         created_at__gt = last_request_time).count()     # in python (greater than ) is not "<" but "__gt"
@@ -105,3 +110,70 @@ def restaurant_order_notification(request, last_request_time):
     where restaurant = request.user.restaurant AND created_at > last_request_time''' #this is a comment
 
     return JsonResponse({"notification":notification})
+
+
+
+###############
+# DRIVERS
+###############
+
+def driver_get_ready_orders(request):
+    orders = OrderSerializer(
+        Order.objects.filter(status = Order.READY, driver = None).order_by("-id"),
+        many = True
+    ).data  ## Order should be ready and no driver should be assigned to that order
+
+    return JsonResponse({"orders":orders})
+
+@csrf_exempt
+# POST params : access_token, order_id
+def driver_pick_order(request):
+
+    if request.method  == "POST":
+        # Get token
+        access_token = AccessToken.objects.get(token = request.POST.get("access_token"),
+        expires__gt = timezone.now())
+
+
+        #Get driver
+        driver = access_token.user.driver
+
+        # Check if driver can onlypick one order at the same time
+        if Order.objects.filter(driver = driver).exclude(status = Order.ONTHEWAY):
+            return JsonResponse({"status": "failed", "error":"you can only pick one order at the timae"})
+
+        try:
+            order = Order.objects.get(
+                id = request.POST["order_id"],
+                driver = None,
+                status = Order.READY
+            )
+            order.driver = driver
+            order.status = order.ONTHEWAY
+            order.picked_at = timezone.now()
+            order.save()
+
+            return JsonResponse({"status": "success"})
+
+        except Order.DoesNotExist:
+            return JsonResponse({"status": "failed", "error": "This order has been picked up by another"})
+
+
+    return JsonResponse({})
+# Get params : access_token
+def driver_get_latest_order(request):
+    # Get token
+    access_token = AccessToken.objects.get(token = request.GET.get("access_token"),
+    expires__gt = timezone.now())
+
+    driver = access_token.user.driver
+    order = OrderSerializer(
+        Order.objects.filter(driver =driver).order_by("picked_at").last()
+    ).data
+    return JsonResponse({"order": order})
+
+def driver_complete_order(request):
+    return JsonResponse({})
+
+def driver_get_revenue(request):
+    return JsonResponse({})
